@@ -1,5 +1,6 @@
 /**
  * 抓取中国行政区域数据
+ * 注：需要在axios.js文件中自行设置cookie和user-agent
  *
  * sobird<i@sobird.me> at 2020/04/30 21:22:17 created.
  */
@@ -10,7 +11,7 @@ const fs = require("fs");
 const path = require("path");
 
 // 城市数据
- getCountyData();
+getCountyData();
 
 // 获取城市数据保存到city.js文件中
 async function getCityData() {
@@ -68,40 +69,40 @@ async function getCountyData() {
 
       await sleep(250);
 
-      (function () {
-        console.log(ccode);
+      await (async function () {
+        try {
+          let html = await axios.get(path);
+          const $ = cheerio.load(html);
+          $(".countytable .countytr").each((index, item) => {
+            let value = $("td", item).eq(0).text();
+            let label = $("td", item).eq(1).text();
 
-        axios
-          .get(path)
-          .then((html) => {
-            const $ = cheerio.load(html);
-            $(".countytable .countytr").each((index, item) => {
+            res[ccode][value] = label;
+          });
+
+          let _tmp = Object.keys(res[ccode]);
+          // 如果获取不到country数据，则抓取town数据
+          if (_tmp.length == 0) {
+            $(".towntable .towntr").each((index, item) => {
               let value = $("td", item).eq(0).text();
               let label = $("td", item).eq(1).text();
 
               res[ccode][value] = label;
-
-              
             });
+          }
 
-            let _tmp = Object.keys(res[ccode]);
-            if(_tmp.length == 0) {
-                console.log(html);
-            }
-
-            console.log(res[ccode]);
-          })
-          .catch((err) => {
-            console.log("超时重试...");
-            arguments.callee();
-          });
+          console.log(res[ccode]);
+        } catch (err) {
+          console.log("超时重试...");
+          arguments.callee();
+        }
       })();
     }
   }
 
   console.log(res);
 
-  writeFileSync("./data/country.js", res);
+  writeFileSync("./data/county.js", res);
 }
 
 // 延迟执行
