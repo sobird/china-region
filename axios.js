@@ -5,10 +5,13 @@
  */
 
 const axios = require("axios");
-const iconv = require('iconv-lite');
+const iconv = require("iconv-lite");
+const fs = require("fs");
+const path = require("path");
 
-axios.defaults.headers['User-Agent'] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36';
-axios.defaults.headers['cookie'] = 'AD_RS_COOKIE=20080919; wzws_cid=7ab3c15df715368866d309f45671e082f363f43d5635974fa58de33fbbeeed3fc36016c6d5b258aa65952db4d0998218c04ac3b4ba1039dba050a2a8dbf46b9cc47033d6a2a5ba45bb7cedf84c2ec02d';
+axios.defaults.headers["User-Agent"] =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36";
+
 axios.defaults.withCredentials = true;
 axios.defaults.timeout = 10000;
 axios.defaults.responseType = "arraybuffer";
@@ -30,6 +33,8 @@ axios.interceptors.request.use(
       request.data = querystring.stringify(request.data);
     }
 
+    request.headers["cookie"] = get_cookie();
+
     return request;
   },
   (error) => {
@@ -40,14 +45,40 @@ axios.interceptors.request.use(
 // 响应拦截器
 axios.interceptors.response.use(
   (response) => {
-    const { config, data } = response;
+    const { config, data, headers } = response;
     data.responseTiming = new Date().getTime() - config.requestTimeStamp;
 
+    set_cookie(headers["set-cookie"]);
     return Promise.resolve(data);
   },
   (error) => {
     return Promise.reject(error);
   }
 );
+
+function set_cookie(cookies = []) {
+  let _cookies = [];
+  cookies.forEach((item) => {
+    let cookie = item.split(";");
+
+    _cookies.push(cookie[0]);
+  });
+
+  if(_cookies.length == 0) {
+      return;
+  }
+
+  _cookies.push('AD_RS_COOKIE=20080917');
+  fs.writeFileSync(path.resolve(__dirname, "./cookie"),  _cookies.join(';'));
+}
+
+function get_cookie() {
+    try{
+        return fs.readFileSync(path.resolve(__dirname, "./cookie"), 'utf-8');
+    } catch {
+        return '';
+    }
+    
+  }
 
 module.exports = axios;

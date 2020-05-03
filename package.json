@@ -6,7 +6,8 @@
   "dependencies": {
     "axios": "^0.19.2",
     "cheerio": "^1.0.0-rc.3",
-    "iconv-lite": "^0.5.1"
+    "iconv-lite": "^0.5.1",
+    "puppeteer": "^3.0.2"
   },
   "devDependencies": {},
   "scripts": {
